@@ -25,6 +25,9 @@ At 12:11 PM PST on 06/20/2026, host DESKTOP-KJ90UE9 generated a Sysmon Event ID 
 | 12:11:16 PM | Sysmon Event ID 1 logged on DESKTOP-KJ90UE9: `powershell.exe` (PID 3160) launched with a command line containing an `-EncodedCommand`-style switch. Parent process: `powershell_ise.exe`. User: `User1`. |
 | ~12:11 PM | Independent of SIEM correlation, Windows Defender flagged related files associated with the testing module via static signature detection (`Trojan:Win32/PShellBr.YA!MTB`) and removed them from the host. This represents a second, independent detection layer responding to the same activity through a different mechanism, signature-based pattern matching rather than behavioral log analysis, and illustrates the value of layered, defense-in-depth detection. |
 
+<img width="1000" height="900" alt="image" src="https://github.com/user-attachments/assets/64843ff9-840c-44d8-91ab-caa5631c8925" />
+
+
 ## 5. Investigation & Analysis
 
 ### 5.1 Initial Findings
@@ -32,6 +35,9 @@ At 12:11 PM PST on 06/20/2026, host DESKTOP-KJ90UE9 generated a Sysmon Event ID 
 The triggering process was executed under the context of the machine's assigned local user, `User1`. `powershell.exe` was the process image responsible for executing the flagged command. The full logged command line was:
 
 "powershell.exe" & {Out-ATHPowerShellCommandLineParameter -CommandLineSwitchType Hyphen -EncodedCommandParamVariation E -Execute -ErrorAction Stop}
+
+<img width="1200" height="600" alt="image" src="https://github.com/user-attachments/assets/c0efc985-55b6-44e1-9fae-765e4e34f02b" />
+
 
 ### 5.2 Payload Analysis
 
@@ -56,6 +62,9 @@ index=main sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational" EventCo
 | regex CommandLine="(?i)-en\w*\s"
 | table _time, ComputerName, User, ParentImage, Image, CommandLine
 ```
+
+<img width="1568" height="353" alt="image" src="https://github.com/user-attachments/assets/cd7d23d9-3165-462f-814f-73a7638863cd" />
+
 
 This query is scoped to Sysmon **Event ID 1 (Process Create)**, restricted to processes where the image is `powershell.exe`, and filters on a case-insensitive regex matching any abbreviation of `-EncodedCommand` (`-en`, `-enc`, `-encodedcommand`, etc.) followed by a space. The regex approach was chosen deliberately over an exact-string match, since PowerShell accepts unambiguous parameter abbreviations, an attacker using `-enc` instead of the full parameter name would evade a literal `-EncodedCommand` match entirely.
 
